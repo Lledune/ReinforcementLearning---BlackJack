@@ -68,7 +68,7 @@ simulation = function(handP, handC, pack){
   pack = temp[[2]]
 
   #stock result
-  cs = rbind(cs, c(score(handP), 1, 0, 0))
+  cs = rbind(cs, c(score(handP), 1, 0.1, 0))
   
   #pick second card 
   temp = pickC(handP, pack)
@@ -80,7 +80,7 @@ simulation = function(handP, handC, pack){
   pack = temp[[2]]
   
   #stock result
-  cs = rbind(cs, c(score(handP), 1, 0, cs[length(cs[,1]), 1]))
+  cs = rbind(cs, c(score(handP), 1, 0.1, cs[length(cs[,1]), 1]))
 
   #reward stock final
   reward = NULL
@@ -94,9 +94,9 @@ simulation = function(handP, handC, pack){
       temp = pickC(handP, pack)
       handP = temp[[1]]
       pack = temp[[2]]
-      cs = rbind(cs, c(score(handP), 1, 0, cs[length(cs[,1]), 1] ))
+      cs = rbind(cs, c(score(handP), 1, 0.1, cs[length(cs[,1]), 1] ))
     }else{
-      cs = rbind(cs, c(score(handP), 0, 0, cs[length(cs[,1]), 1]))
+      cs = rbind(cs, c(score(handP), 0, 0.1, cs[length(cs[,1]), 1]))
       
     }
     #if croupier < 17, he draws a card
@@ -158,14 +158,19 @@ for(i in 1:10){
 }
 #used to max the Qvalue decision
 getRowMax = function(tab){
-  return(max(tab))
+  temp = tab[1]
+  for(i in 2:length(tab)){
+    if(tab[i] > temp){
+      temp = tab[i]
+    }
+  }
 }
 #####################################################################
 #Q-learning
 #####################################################################
 
 #Represent sets of Q(s, a)
-Qvalues = matrix(1, nrow = 30, ncol = 2)
+Qvalues = matrix(0, nrow = 30, ncol = 2)
 simResults = simRand(1000)
 #Hyperparameters
 alpha = 0.9
@@ -176,7 +181,6 @@ for(i in 1:length(simResults[,1])){
   st = simResults[i, 4] #st
   a = simResults[i, 2] #a
   stPlusOne = simResults[i, 1] #st+1
-  
   Qvalues[st, a] = Qvalues[st, a] + alpha * ( simResults[i,3] * discount * getRowMax(Qvalues[stPlusOne, ]) - Qvalues[st, a] )
 }
 
