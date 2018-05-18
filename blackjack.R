@@ -51,8 +51,12 @@ printWinner = function(resultList){
   }
 }
 
-#Black jack sim
+#Black jack sim : 
 simulation = function(handP, handC, pack){
+  
+  #Matrix to stock choice and state, 1st is state, 2nd is choice, 3rd is reward.
+  cs = NULL
+  
   #pick first card 
   temp = NULL
   temp = pickC(handP, pack)
@@ -63,6 +67,10 @@ simulation = function(handP, handC, pack){
   handC = temp[[1]]
   pack = temp[[2]]
   
+  
+  #stock result
+  cs = rbind(cs, c(score(handP), 1, 0))
+  
   #pick second card 
   temp = pickC(handP, pack)
   handP = temp[[1]]
@@ -72,25 +80,88 @@ simulation = function(handP, handC, pack){
   handC = temp[[1]]
   pack = temp[[2]]
   
+  #stock result
+  cs = rbind(cs, c(score(handP), 1, 0))
+
+  #reward stock final
+  reward = NULL
+  
   #to change with algo decision 
-  while(score(handP) < 17 || score(handC) < 17){
-    if(score(handP) < 17){
+  while(score(handC) < 17){
+    #rand number to choose action, 1 = draw
+    rand = round(2*runif(1),0)
+    #if a = 1, draw a card
+    if(rand == 1){
       temp = pickC(handP, pack)
       handP = temp[[1]]
       pack = temp[[2]]
+      cs = rbind(cs, c(score(handP), 1, 0))
+    }else{
+      cs = rbind(cs, c(score(handP), 0, 0))
+      
     }
+    #if croupier < 17, he draws a card
     if(score(handC) < 17){
       temp = pickC(handC, pack)
       handC = temp[[1]]
       pack = temp[[2]]
     }
   }
+  
+  #get scores
   scores = c(score(handP), score(handC))
-  return(list(handP, handC, pack, scores))
+  resultList = list(handP, handC, pack, scores)
+  
+  #get reward
+  res = resultList[[4]]
+  p = res[1]
+  c = res[2]
+  if((p > c && p <= 21) || (p <= 21 && c > 21)){
+    reward = 100
+  }else{
+    reward = -50
+  }
+  
+  #Add reward as the reward of the last line of cs
+  cs[length(cs[,1]), 3] = reward
+  
+  #return full list 
+  resultList = list(handP, handC, pack, scores, cs)
+  return(resultList)
 }
+
+#Function for simulation, outputs tab containins states, actions and choices 
+simRand = function(k){
+  resultsRand = NULL
+  for(i in 1:k){
+    #init pack and hands
+    pack = c(rep(1,4), rep(2,4),rep(3,4),rep(4,4),rep(5,4),rep(6,4),rep(7,4),rep(8,4),
+                 rep(9,4),rep(10,16))
+    handC = NULL
+    handP = NULL
+    #simulation k
+    res = simulation(handP, handC, pack)
+    resultsRand = rbind(resultsRand, res[[5]])
+    
+    #resets for next iteration 
+    pack = c(rep(1,4), rep(2,4),rep(3,4),rep(4,4),rep(5,4),rep(6,4),rep(7,4),rep(8,4),
+             rep(9,4),rep(10,16))
+    handC = NULL
+    handP = NULL
+  }
+  return(resultsRand)
+}
+
 
 for(i in 1:10){
-results = simulation(handPinit, handCinit, packinit)
-printWinner(results)
+  results = simulation(handPinit, handCinit, packinit)
+  printWinner(results)
 }
 
+#####################################################################
+#Q-learning
+#####################################################################
+
+#Represent sets of Q(s, a)
+Qvalues = matrix(0, nrow = 30, ncol = 2)
+dd = simRand(10)
