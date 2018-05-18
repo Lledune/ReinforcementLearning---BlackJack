@@ -24,7 +24,7 @@ randInt = function(pack){
   return(int)
 }
 
-#Picks a card, add it to the desired hand and deletes it from the package.
+#Picks a card, asimResults it to the desired hand and deletes it from the package.
 pickC = function(hand, pack){
   
   int = randInt(pack)
@@ -54,7 +54,7 @@ printWinner = function(resultList){
 #Black jack sim : 
 simulation = function(handP, handC, pack){
   
-  #Matrix to stock choice and state, 1st is state, 2nd is choice, 3rd is reward.
+  #Matrix to stock choice and next state, 1st is state, 2nd is choice, 3rd is reward, 4th is start state
   cs = NULL
   
   #pick first card 
@@ -66,10 +66,9 @@ simulation = function(handP, handC, pack){
   temp = pickC(handC, pack)
   handC = temp[[1]]
   pack = temp[[2]]
-  
-  
+
   #stock result
-  cs = rbind(cs, c(score(handP), 1, 0))
+  cs = rbind(cs, c(score(handP), 1, 0, 0))
   
   #pick second card 
   temp = pickC(handP, pack)
@@ -81,7 +80,7 @@ simulation = function(handP, handC, pack){
   pack = temp[[2]]
   
   #stock result
-  cs = rbind(cs, c(score(handP), 1, 0))
+  cs = rbind(cs, c(score(handP), 1, 0, cs[length(cs[,1]), 1]))
 
   #reward stock final
   reward = NULL
@@ -91,13 +90,13 @@ simulation = function(handP, handC, pack){
     #rand number to choose action, 1 = draw
     rand = round(2*runif(1),0)
     #if a = 1, draw a card
-    if(rand == 1){
+    if(rand == 1 && score(handP) < 21){
       temp = pickC(handP, pack)
       handP = temp[[1]]
       pack = temp[[2]]
-      cs = rbind(cs, c(score(handP), 1, 0))
+      cs = rbind(cs, c(score(handP), 1, 0, cs[length(cs[,1]), 1] ))
     }else{
-      cs = rbind(cs, c(score(handP), 0, 0))
+      cs = rbind(cs, c(score(handP), 0, 0, cs[length(cs[,1]), 1]))
       
     }
     #if croupier < 17, he draws a card
@@ -122,7 +121,7 @@ simulation = function(handP, handC, pack){
     reward = -50
   }
   
-  #Add reward as the reward of the last line of cs
+  #AsimResults reward as the reward of the last line of cs
   cs[length(cs[,1]), 3] = reward
   
   #return full list 
@@ -152,16 +151,32 @@ simRand = function(k){
   return(resultsRand)
 }
 
-
+#test 
 for(i in 1:10){
   results = simulation(handPinit, handCinit, packinit)
   printWinner(results)
 }
-
+#used to max the Qvalue decision
+getRowMax = function(tab){
+  return(max(tab))
+}
 #####################################################################
 #Q-learning
 #####################################################################
 
 #Represent sets of Q(s, a)
-Qvalues = matrix(0, nrow = 30, ncol = 2)
-dd = simRand(10)
+Qvalues = matrix(1, nrow = 30, ncol = 2)
+simResults = simRand(1000)
+#Hyperparameters
+alpha = 0.9
+discount = 0.1
+
+#for all rows simulated, update qvalues.
+for(i in 1:length(simResults[,1])){
+  st = simResults[i, 4] #st
+  a = simResults[i, 2] #a
+  stPlusOne = simResults[i, 1] #st+1
+  
+  Qvalues[st, a] = Qvalues[st, a] + alpha * ( simResults[i,3] * discount * getRowMax(Qvalues[stPlusOne, ]) - Qvalues[st, a] )
+}
+
