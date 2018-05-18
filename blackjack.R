@@ -24,7 +24,7 @@ randInt = function(pack){
   return(int)
 }
 
-#Picks a card, add it to the desired hand and deletes it from the package.i = 1 for player, 2 for croupier
+#Picks a card, add it to the desired hand and deletes it from the package.
 pickC = function(hand, pack){
   
   int = randInt(pack)
