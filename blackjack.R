@@ -118,7 +118,7 @@ simulation = function(handP, handC, pack){
   if((p > c && p <= 21) || (p <= 21 && c > 21)){
     reward = 100
   }else{
-    reward = -50
+    reward = -100
   }
   
   #AsimResults reward as the reward of the last line of cs
@@ -164,23 +164,25 @@ getRowMax = function(tab){
       temp = tab[i]
     }
   }
+  return(temp)
 }
 #####################################################################
 #Q-learning
 #####################################################################
 
 #Represent sets of Q(s, a)
-Qvalues = matrix(0, nrow = 30, ncol = 2)
-simResults = simRand(1000)
+Qvalues = matrix(1, nrow = 35, ncol = 2)
+simResults = simRand(100000)
 #Hyperparameters
 alpha = 0.9
-discount = 0.1
+discount = 0.15
 
+simResults[simResults[,1] == 0, 1] = 1
 #for all rows simulated, update qvalues.
 for(i in 1:length(simResults[,1])){
   st = simResults[i, 4] #st
   a = simResults[i, 2] #a
   stPlusOne = simResults[i, 1] #st+1
-  Qvalues[st, a] = Qvalues[st, a] + alpha * ( simResults[i,3] * discount * getRowMax(Qvalues[stPlusOne, ]) - Qvalues[st, a] )
+  Qvalues[st+1, a+1] = (1-alpha) * Qvalues[st+1, a+1] + alpha * (simResults[i, 3] + discount * getRowMax(Qvalues[stPlusOne+1, ]))
 }
 
