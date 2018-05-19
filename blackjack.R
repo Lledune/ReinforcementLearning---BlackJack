@@ -21,7 +21,7 @@ list = list(handPinit, handCinit, packinit)
 randInt = function(pack){
   int = runif(1) * length(pack)
   int = int+1
-  int = round(int, 0)
+  int = as.integer(int)
   return(int)
 }
 
@@ -115,7 +115,7 @@ simulation = function(handP, handC, pack){
   #to change with algo decision 
   while((scoreP < 21) == T){
     #rand number to choose action, 1 = draw
-    rand = round(2*runif(1),0)
+    rand = as.integer(2*runif(1))
     #if a = 1, draw a card
     if((rand == 1 && scoreP < 21) == T){
       temp = pickC(handP, pack)
@@ -251,7 +251,6 @@ simResults = simRand(10000)
 alpha = 0.5
 discount = 0.25
 
-simResults[simResults[,1] == 0, 1] = 27
 #for all rows simulated, update qvalues.
 for(i in 1:length(simResults[,1])){
   st = simResults[i, 4] #st
@@ -323,6 +322,7 @@ policyTest = function(optP){
   return(result)
 }
 
+#Loop for policy test 
 policyTestK = function(k, optPT){
   
   resultt = NULL
@@ -333,5 +333,70 @@ policyTestK = function(k, optPT){
   return(resultt)
 }
 
-policytest = policyTest(optP)
+#Random policy test 
+randPolTest = function(){
+  ###########
+  pack = c(rep(1,4), rep(2,4),rep(3,4),rep(4,4),rep(5,4),rep(6,4),rep(7,4),rep(8,4),
+           rep(9,4),rep(10,16))
+  handC = NULL
+  handP = NULL
+  scoreP = 0
+  scoreC = 0
+  ###########
+  
+  #Decision (random for player)
+  while((scoreP < 21) == T){
+    #rand number to choose action, 1 = draw
+    rand = as.integer(2*runif(1))
+    #if a = 1, draw a card
+    if((rand == 1 && scoreP < 21) == T){
+      temp = pickC(handP, pack)
+      handP = temp[[1]]
+      pack = temp[[2]]
+      scoreP = scoreP + temp[[3]]
+    }else{
+      if((scoreP >= 17) == T){
+        break
+      }
+    }
+    #if croupier < 17, he draws a card
+    if((scoreC < 17) == T){
+      temp = pickC(handC, pack)
+      handC = temp[[1]]
+      pack = temp[[2]]
+      scoreC = scoreC + temp[[3]]
+    }
+  }
+  
+  #get scores
+  scores = c(scoreP, scoreC)
+  p = scores[1]
+  c = scores[2]
+  printWinner2(p, c)
+  
+  result = NULL
+  if(((p < c && c > 21) || (p <= 21 && p > c)) == T){
+    result = 1
+  }else{
+    result = 0
+  }
+  return(result)
+}
+
+#Loop for policy random test 
+randPolTestK = function(k){
+  resultt = NULL
+  for(i in 1:k){
+    resultt = c(resultt, randPolTest())
+  }
+  return(resultt)
+}
+
 polTTT = policyTestK(100, optP)
+#Exemple of results for Qpolicy
+won = sum(polTTT[polTTT == 1])
+won
+
+randPolSim = randPolTestK(100)
+wonRand = sum(randPolSim[randPolSim == 1])
+wonRand
