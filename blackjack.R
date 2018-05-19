@@ -2,13 +2,13 @@
 
 #Initial tabs 
 packinit = c(rep(1,4), rep(2,4),rep(3,4),rep(4,4),rep(5,4),rep(6,4),rep(7,4),rep(8,4),
-            rep(9,4),rep(10,16))
+             rep(9,4),rep(10,16))
 #In our game and for simplicifaction of the problem, aces will always count as 1. Other figures are worth 10.
 #If both player and croupier have same score, then player looses.
 #Croupier will draw cards until he has 17 or more. 
 #if both have a score > 21, then the lowest value wins
 
-            
+
 handPinit = NULL # will contain hand of player
 handCinit = NULL # will contain hand of the croupier 
 
@@ -29,20 +29,22 @@ randInt = function(pack){
 pickC = function(hand, pack){
   
   int = randInt(pack)
+  pickedCard = pack[int]
   hand = c(hand, pack[int])
   pack = pack[-int]
   
-  return(list(hand, pack))
+  return(list(hand, pack, pickedCard))
 }
 
 score = function(handC){
   sum = 0
-  for(i in 1:length(handC)){
-    if(is.na(handC[i]) == F){
-      sum = sum + handC[i]
+  if(is.null(handC) == F){
+    for(i in 1:length(handC)){
+      if(is.na(handC[i]) == F){
+        sum = sum + handC[i]
+      }
     }
   }
-  
   return(sum)
 }
 
@@ -51,7 +53,19 @@ printWinner = function(resultList){
   p = res[1]
   c = res[2]
   
-  if((p < c && c > 21) || (p <= 21 && p > c)){
+  if(((p < c && c > 21) || (p <= 21 && p > c)) == T){
+    cat("Player has won with ", p, ", croupier has ", c, ".\n", sep = "")
+  }else{
+    cat("Player has lost with ", p, ", croupier has ", c, ".\n", sep = "")
+    
+  }
+}
+
+printWinner2 = function(scoreP, scoreC){
+  p = scoreP
+  c = scoreC
+  
+  if(((p < c && c > 21) || (p <= 21 && p > c)) == T){
     cat("Player has won with ", p, ", croupier has ", c, ".\n", sep = "")
   }else{
     cat("Player has lost with ", p, ", croupier has ", c, ".\n", sep = "")
@@ -64,68 +78,75 @@ simulation = function(handP, handC, pack){
   
   #Matrix to stock choice and next state, 1st is state, 2nd is choice, 3rd is reward, 4th is start state
   cs = NULL
-  
+  scoreP = 0
+  scoreC = 0
   #pick first card 
   temp = NULL
   temp = pickC(handP, pack)
   handP = temp[[1]]
   pack = temp[[2]]
+  scoreP = scoreP + temp[[3]]
   
   temp = pickC(handC, pack)
   handC = temp[[1]]
   pack = temp[[2]]
-
+  scoreC = scoreC + temp[[3]]
+  
   #stock result
-  cs = rbind(cs, c(score(handP), 1, 5, 0))
+  cs = rbind(cs, c(scoreP, 1, 5, 0))
   
   #pick second card 
   temp = pickC(handP, pack)
   handP = temp[[1]]
   pack = temp[[2]]
+  scoreP = scoreP + temp[[3]]
   
   temp = pickC(handC, pack)
   handC = temp[[1]]
   pack = temp[[2]]
+  scoreC = scoreC + temp[[3]]
   
   #stock result
-  cs = rbind(cs, c(score(handP), 1, 5, cs[length(cs[,1]), 1]))
-
+  cs = rbind(cs, c(scoreP, 1, 5, cs[length(cs[,1]), 1]))
+  
   #reward stock final
   reward = NULL
   
   #to change with algo decision 
-  while(score(handP) < 21){
+  while((scoreP < 21) == T){
     #rand number to choose action, 1 = draw
     rand = round(2*runif(1),0)
     #if a = 1, draw a card
-    if(rand == 1 && score(handP) < 21){
+    if((rand == 1 && scoreP < 21) == T){
       temp = pickC(handP, pack)
       handP = temp[[1]]
       pack = temp[[2]]
-      cs = rbind(cs, c(score(handP), 1, 5, cs[length(cs[,1]), 1]))
+      scoreP = scoreP + temp[[3]]
+      cs = rbind(cs, c(scoreP, 1, 5, cs[length(cs[,1]), 1]))
     }else{
-      cs = rbind(cs, c(score(handP), 0, 0, cs[length(cs[,1]), 1]))
-      if(score(handP) >= 17){
+      cs = rbind(cs, c(scoreP, 0, 0, cs[length(cs[,1]), 1]))
+      if((scoreP >= 17) == T){
         break
       }
     }
     #if croupier < 17, he draws a card
-    if(score(handC) < 17){
+    if((scoreC < 17) == T){
       temp = pickC(handC, pack)
       handC = temp[[1]]
       pack = temp[[2]]
+      scoreC = scoreC + temp[[3]]
     }
   }
   
   #get scores
-  scores = c(score(handP), score(handC))
+  scores = c(scoreP, scoreC)
   resultList = list(handP, handC, pack, scores)
   
   #get reward
   res = resultList[[4]]
   p = res[1]
   c = res[2]
-  if((p < c && c > 21) || (p <= 21 && p > c)){
+  if(((p < c && c > 21) || (p <= 21 && p > c)) == T){
     reward = 100
   }else{
     reward = -25
@@ -146,7 +167,7 @@ simRand = function(k){
   for(i in 1:k){
     #init pack and hands
     pack = c(rep(1,4), rep(2,4),rep(3,4),rep(4,4),rep(5,4),rep(6,4),rep(7,4),rep(8,4),
-                 rep(9,4),rep(10,16))
+             rep(9,4),rep(10,16))
     handC = NULL
     handP = NULL
     #simulation k
@@ -178,12 +199,12 @@ getRowMax = function(tab){
   return(temp)
 }
 
-#converts QValues tab to optimal policy 
+#converts QValues tab to optimal policy, tab is longer than 21 to prevent index bugs in choice
 Qpolicy = function(Qvalues){
-  policy = as.data.frame(matrix(ncol = 1, nrow = 22))
+  policy = as.data.frame(matrix(ncol = 1, nrow = 35))
   colnames(policy) = "policy"
-  rownames(policy) = 0:21
-  for(i in 1:22){
+  rownames(policy) = 0:34
+  for(i in 1:35){
     if(Qvalues[i, 1] > Qvalues[i, 2]){
       policy[i,1] = 0
     }else{
@@ -191,7 +212,7 @@ Qpolicy = function(Qvalues){
     }
   }
   #If player has 21, never draw. (as the case won't be treated because of a condition in our simulation for the player to stop at 21, which is rational)
-  policy[22, 1] = 0
+  policy[22:35, 1] = 0
   return(policy)
 }
 
@@ -255,7 +276,7 @@ policyMC = Qpolicy(QvaluesMC)
 
 #For the result section i will use the optimal policy derived from our Q-learning method and see how well it does against the croupier basic strategy. 
 
-optP = as.matrix(policyMC)
+optP = as.numeric(policyMC[,1])
 
 policyTest = function(optP){
   ###########
@@ -263,32 +284,38 @@ policyTest = function(optP){
            rep(9,4),rep(10,16))
   handC = NULL
   handP = NULL
+  scoreP = 0
+  scoreC = 0
   ###########
-  #to change with algo decision 
-  while(score(handP) < 21){
-    choice = optP[score(handC)+1, 1]
+  for(i in 1:5){
+
+    choice = optP[scoreP+1]
     
     #if a = 1, draw a card
-    if(choice == 1 && score(handP) < 21){
+    if((choice == 1) == T){
       temp = pickC(handP, pack)
       handP = temp[[1]]
       pack = temp[[2]]
+      scoreP = scoreP + temp[[3]]
     }
     
     #if croupier < 17, he draws a card
-    if(score(handC) < 17){
+    if((scoreC < 17) == T){
       temp = pickC(handC, pack)
       handC = temp[[1]]
       pack = temp[[2]]
+      scoreC = scoreC + temp[[3]]
     }
   }
   
   #get scores
-  scores = c(score(handP), score(handC))
+  scores = c(scoreP, scoreC)
+  p = scores[1]
+  c = scores[2]
+  printWinner2(p, c)
   
-  #result
   result = NULL
-  if(scores[1] > scores[2]){
+  if(((p < c && c > 21) || (p <= 21 && p > c)) == T){
     result = 1
   }else{
     result = 0
@@ -297,7 +324,7 @@ policyTest = function(optP){
 }
 
 policyTestK = function(k, optPT){
-
+  
   resultt = NULL
   
   for(i in 1:k){
