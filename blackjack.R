@@ -217,15 +217,15 @@ Qpolicy = function(Qvalues){
 }
 
 #We use the monte carlo function to try to better approximate the optimal policy. We use empirical mean which is 1/n*sum(g(x))
-monteCarloSim = function(m, alpha, discount){
+#m is the number of tries to do the mean 
+#k is the iterations for each try 
+monteCarloSim = function(m, k, alpha, discount){
   QvaluesMC = matrix(0, nrow = 35, ncol = 2)
   for(i in 1:m){
     Qvalues = matrix(0, nrow = 35, ncol = 2)
     #Represent sets of Q(s, a)
-    simResults = simRand(10000)
-    
-    simResults[simResults[,1] == 0, 1] = 29
-    #for all rows simulated, update qvalues.
+    simResults = simRand(k)
+        #for all rows simulated, update qvalues.
     for(i in 1:length(simResults[,1])){
       st = simResults[i, 4] #st
       a = simResults[i, 2] #a
@@ -235,6 +235,25 @@ monteCarloSim = function(m, alpha, discount){
     QvaluesMC = QvaluesMC + Qvalues
   }
   QvaluesMC = QvaluesMC/m
+  return(QvaluesMC)
+}
+
+#Sim without montecarlo
+noMonteCarloSim = function(k, alpha, discount){
+  
+    Qvalues = matrix(0, nrow = 35, ncol = 2)
+    
+    #Represent sets of Q(s, a)
+    simResults = simRand(k)
+    #for all rows simulated, update qvalues.
+    for(i in 1:length(simResults[,1])){
+      st = simResults[i, 4] #st
+      a = simResults[i, 2] #a
+      stPlusOne = simResults[i, 1] #st+1
+      Qvalues[st+1, a+1] = (1-alpha) * Qvalues[st+1, a+1] + alpha * (simResults[i, 3] + discount * getRowMax(Qvalues[stPlusOne+1, ]))
+    }
+    
+    return(Qvalues)
 }
 
 
@@ -261,7 +280,7 @@ for(i in 1:length(simResults[,1])){
 policy = Qpolicy(Qvalues)
 
 #Using montecarlo
-QvaluesMC = monteCarloSim(5, 0.25, 0.5)
+QvaluesMC = monteCarloSim(5, 10000, 0.25, 0.5)
 policyMC = Qpolicy(QvaluesMC)
 
 #Hyperparameters : 
@@ -288,7 +307,7 @@ policyTest = function(optP){
   ###########
   for(i in 1:5){
 
-    choice = optP[scoreP+1]
+    choice = optP[scoreP+1,1]
     
     #if a = 1, draw a card
     if((choice == 1) == T){
@@ -400,3 +419,24 @@ won
 randPolSim = randPolTestK(100)
 wonRand = sum(randPolSim[randPolSim == 1])
 wonRand
+
+#######################################################
+#Tests monte carlo vs no monte carlo
+#######################################################
+
+tryList = c(25,50,100,1000,10000)
+tryResults = list()
+tryResultsMC = list()
+randResult = sum(randPolTestK(2500) == 1)
+for(i in 1:length(tryList)){
+  policytry = Qpolicy(noMonteCarloSim(tryList[i], 0.25, 0.5))
+  policytryMC = Qpolicy(monteCarloSim(5, (tryList[i]/5), 0.25, 0.5))
+  tryResults[[i]] = sum(policyTestK(2500, policytry) == 1)
+  tryResultsMC[[i]] = sum(policyTestK(2500, policytryMC) == 1)
+}
+
+#The results will show the number of games won on 2500 simulations
+tryResults
+tryResultsMC
+randResult
+
