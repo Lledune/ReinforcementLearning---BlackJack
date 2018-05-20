@@ -93,7 +93,7 @@ simulation = function(handP, handC, pack){
   scoreC = scoreC + temp[[3]]
   
   #stock result
-  cs = rbind(cs, c(scoreP, 1, 5, 0))
+  cs = rbind(cs, c(scoreP, 1, 0, 0))
   
   #pick second card 
   temp = pickC(handP, pack)
@@ -107,7 +107,7 @@ simulation = function(handP, handC, pack){
   scoreC = scoreC + temp[[3]]
   
   #stock result
-  cs = rbind(cs, c(scoreP, 1, 5, cs[length(cs[,1]), 1]))
+  cs = rbind(cs, c(scoreP, 1, 0, cs[length(cs[,1]), 1]))
   
   #reward stock final
   reward = NULL
@@ -122,7 +122,7 @@ simulation = function(handP, handC, pack){
       handP = temp[[1]]
       pack = temp[[2]]
       scoreP = scoreP + temp[[3]]
-      cs = rbind(cs, c(scoreP, 1, 5, cs[length(cs[,1]), 1]))
+      cs = rbind(cs, c(scoreP, 1, 0, cs[length(cs[,1]), 1]))
     }else{
       cs = rbind(cs, c(scoreP, 0, 0, cs[length(cs[,1]), 1]))
       if((scoreP >= 17) == T){
