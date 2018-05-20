@@ -38,4 +38,4 @@ resultmatrix2 <- data.frame(typesim,nbiter,percentvictory)
 
 ggplot(data=resultmatrix2, aes(x = nbiter, y=percentvictory, color=typesim, group=typesim)) +geom_line()+
 labs(title="Percentage of victory for each simulation type, by number of iteration", x="Number of iteration", y="Percentage of victory", colour="Simulation type")
-ggsave(file="simcomparison", plot=last_plot(), device="png", width = 15, height=15,units="cm")
+ggsave(file="simcomparison", plot=last_plot(), device="png", width = 20, height=15,units="cm")
