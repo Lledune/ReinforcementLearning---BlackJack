@@ -36,5 +36,6 @@ for(i in c(10,50,100,500,1000,5000,10000,50000,100000)){
 resultmatrix2<-NULL
 resultmatrix2 <- data.frame(typesim,nbiter,percentvictory)
 
-ggplot(data=resultmatrix2, aes(x = nbiter, y=percentvictory, color=typesim, group=typesim)) +geom_line()
+ggplot(data=resultmatrix2, aes(x = nbiter, y=percentvictory, color=typesim, group=typesim)) +geom_line()+
+labs(title="Percentage of victory for each simulation type, by number of iteration", x="Number of iteration", y="Percentage of victory", colour="Simulation type")
 ggsave(file="simcomparison", plot=last_plot(), device="png", width = 15, height=15,units="cm")
